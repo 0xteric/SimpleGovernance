@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+interface IStaking {
+    function stakedBalance(address _user) external view returns (uint);
+}
+
 contract Governance {
+    IStaking public staking;
+
     struct Proposal {
         uint256 id;
         string description;
@@ -17,18 +23,18 @@ contract Governance {
     address public admin;
 
     mapping(uint => Proposal) public proposals;
-    mapping(address => uint) public votingPower;
     mapping(uint => mapping(address => bool)) public hasVoted;
 
     event ProposalCreated(uint id, string description, address proposer);
     event Voted(uint proposalId, address voter);
 
-    constructor() {
+    constructor(address _stakingContract) {
         admin = msg.sender;
+        staking = IStaking(_stakingContract);
     }
 
     modifier onlyVoter() {
-        require(votingPower[msg.sender] > 0, "User has 0 voting power.");
+        require(getVotingPower(msg.sender) > 0, "User has 0 voting power.");
         _;
     }
 
@@ -37,8 +43,8 @@ contract Governance {
         _;
     }
 
-    function updateVotingPower(address _voter, uint _power) external onlyAdmin {
-        votingPower[_voter] = _power;
+    function getVotingPower(address _voter) public view returns (uint) {
+        return staking.stakedBalance(_voter);
     }
 
     function vote(uint _id, bool _vote) external onlyVoter {
@@ -48,9 +54,9 @@ contract Governance {
         require(!hasVoted[_id][msg.sender], "User already voted.");
 
         if (_vote) {
-            proposal.yesVotes += votingPower[msg.sender];
+            proposal.yesVotes += getVotingPower(msg.sender);
         } else {
-            proposal.noVotes += votingPower[msg.sender];
+            proposal.noVotes += getVotingPower(msg.sender);
         }
         hasVoted[_id][msg.sender] = true;
 
@@ -59,7 +65,7 @@ contract Governance {
 
     function createProposal(string memory _description) external {
         require(
-            votingPower[msg.sender] > 1000,
+            getVotingPower(msg.sender) > 1000,
             "At least 1000 voting power is need to create a proposal."
         );
         proposalCount++;
@@ -83,5 +89,9 @@ contract Governance {
         );
         require(!proposal.approved, "Proposal already executed.");
         proposal.approved = proposal.yesVotes > proposal.noVotes;
+    }
+
+    function changeAdmin(address _admin) public onlyAdmin {
+        admin = _admin;
     }
 }
