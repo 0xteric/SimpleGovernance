@@ -19,7 +19,7 @@ It allows a community with assigned voting power to:
 
 ## Key Features
 
-- `votingPower`: Tracks voting power per address
+- `votingPower`: Tracks voting power from ``staked Giga Wei`` balance
 - `VOTING_PERIOD`: Duration of voting (3 days)
 - `approved`: Indicates whether a proposal passed or not
 
