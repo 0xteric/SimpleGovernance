@@ -43,10 +43,18 @@ contract Governance {
         _;
     }
 
+    /** Checks the voting power of stakers based on the staked balance
+     * @param _voter address to check its voting power
+     */
     function getVotingPower(address _voter) public view returns (uint) {
         return staking.stakedBalance(_voter);
     }
 
+    /**
+     * Votes TRUE or FALSE on a proposal, voting amount depends on user voting power.
+     * @param _id Id of the proposal to vote
+     * @param _vote Side of the vote (TRUE/FALSE)
+     */
     function vote(uint _id, bool _vote) external onlyVoter {
         Proposal storage proposal = proposals[_id];
         require(_id > 0 && _id <= proposalCount, "Invalid proposal ID.");
@@ -62,6 +70,11 @@ contract Governance {
 
         emit Voted(_id, msg.sender);
     }
+
+    /**
+     * Users with at least 1000 staked tokens can make proposals
+     * @param _description Description of the proposal
+     */
 
     function createProposal(string memory _description) external {
         require(
@@ -81,6 +94,11 @@ contract Governance {
         emit ProposalCreated(proposalCount, _description, msg.sender);
     }
 
+    /**
+     * Executes the voting result of a proposal if YES > NO then the proposal is accepted
+     * @param _id Proposal id
+     */
+
     function executeProposal(uint _id) external {
         Proposal storage proposal = proposals[_id];
         require(
@@ -91,6 +109,10 @@ contract Governance {
         proposal.approved = proposal.yesVotes > proposal.noVotes;
     }
 
+    /**
+     * Updates contract admin
+     * @param _admin New admin address
+     */
     function changeAdmin(address _admin) public onlyAdmin {
         admin = _admin;
     }
